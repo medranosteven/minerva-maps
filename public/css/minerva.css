@@ -228,7 +228,7 @@ font-variation-settings:
   border-radius: 15px;
   background-color: white;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.01s ease;
   flex-shrink: 0; /* Para evitar que las opciones se compriman */
 }
 

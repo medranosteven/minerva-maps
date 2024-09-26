@@ -1,53 +1,92 @@
 const menuContainer = document.querySelector('.menu-container');
-    let isDragging = false;
-    let startX;
-    let scrollLeft;
+let isDragging = false;
+let startX;
+let scrollLeft;
+let velocity = 0;
+let friction = 0.95; // Ajustar fricción para suavizar el final del arrastre
 
-    // Evento al presionar el mouse
-    menuContainer.addEventListener('mousedown', (e) => {
-      isDragging = true;
-      startX = e.pageX - menuContainer.offsetLeft;
-      scrollLeft = menuContainer.scrollLeft;
-      menuContainer.style.cursor = 'grabbing'; // Cambia el cursor al arrastrar
+// Evento al presionar el mouse o toque
+const startDragging = (e) => {
+  isDragging = true;
+  startX = (e.pageX || e.touches[0].pageX) - menuContainer.offsetLeft;
+  scrollLeft = menuContainer.scrollLeft;
+  menuContainer.style.cursor = 'grabbing'; // Cambia el cursor al arrastrar
+};
+
+// Evento cuando el mouse o el toque se mueve
+const dragging = (e) => {
+  if (!isDragging) return;
+  e.preventDefault();
+  const x = (e.pageX || e.touches[0].pageX) - menuContainer.offsetLeft;
+  const walk = (x - startX) * 6; // Ajustar la velocidad del desplazamiento
+  menuContainer.scrollLeft = scrollLeft - walk;
+  velocity = walk; // Registrar velocidad del desplazamiento
+};
+
+// Evento al soltar el mouse o el toque
+const stopDragging = () => {
+  isDragging = false;
+  menuContainer.style.cursor = 'grab'; // Restablecer el cursor
+  // Aplicar fricción para suavizar el final del arrastre
+  requestAnimationFrame(applyFriction);
+};
+
+// Aplicar fricción cuando se suelta el arrastre
+const applyFriction = () => {
+  if (Math.abs(velocity) > 0.1) {
+    menuContainer.scrollLeft -= velocity;
+    velocity *= friction; // Aplicar fricción
+    requestAnimationFrame(applyFriction);
+  }
+};
+
+// Eventos del mouse
+menuContainer.addEventListener('mousedown', startDragging);
+menuContainer.addEventListener('mousemove', dragging);
+menuContainer.addEventListener('mouseup', stopDragging);
+menuContainer.addEventListener('mouseleave', stopDragging);
+
+// Eventos de toque (pantallas táctiles)
+menuContainer.addEventListener('touchstart', startDragging);
+menuContainer.addEventListener('touchmove', dragging);
+menuContainer.addEventListener('touchend', stopDragging);
+
+// Función para mostrar más tarjetas (sin cambios)
+function showMoreCards(sectionId) {
+  const hiddenCards = document.getElementById(sectionId);
+  if (hiddenCards.style.display === "none") {
+    hiddenCards.style.display = "grid";
+  } else {
+    hiddenCards.style.display = "none";
+  }
+}
+
+// Funcionalidad para buscar por nombre o departamento (sin cambios)
+const searchInput = document.querySelector('.boton__texto');
+searchInput.addEventListener('input', function () {
+  const searchTerm = this.value.toLowerCase();
+  const sections = document.querySelectorAll('.section-container');
+  
+  sections.forEach(section => {
+    const departmentTitle = section.querySelector('.section-title').textContent.toLowerCase();
+    const cards = section.querySelectorAll('.card');
+    let hasVisibleCard = false;
+    
+    cards.forEach(card => {
+      const cardTitle = card.querySelector('h3').textContent.toLowerCase();
+      if (cardTitle.includes(searchTerm) || departmentTitle.includes(searchTerm)) {
+        card.style.display = "block";
+        hasVisibleCard = true;
+      } else {
+        card.style.display = "none";
+      }
     });
-
-    // Evento cuando el mouse se mueve
-    menuContainer.addEventListener('mousemove', (e) => {
-      if (!isDragging) return;
-      e.preventDefault();
-      const x = e.pageX - menuContainer.offsetLeft;
-      const walk = (x - startX) * 2; // Ajustar la velocidad del desplazamiento
-      menuContainer.scrollLeft = scrollLeft - walk;
-    });
-
-    // Evento al soltar el mouse
-    menuContainer.addEventListener('mouseup', () => {
-      isDragging = false;
-      menuContainer.style.cursor = 'grab'; // Restablecer el cursor
-    });
-
-    // Evento cuando el mouse sale del contenedor
-    menuContainer.addEventListener('mouseleave', () => {
-      isDragging = false;
-      menuContainer.style.cursor = 'grab'; // Restablecer el cursor
-    });
-
-
-    function showMoreCards() {
-      const hiddenCards = document.querySelector('.hidden-cards');
-      hiddenCards.style.display = 'grid'; // Mostrar las tarjetas ocultas
-      const viewMoreBtn = document.querySelector('.view-more-btn');
-      viewMoreBtn.style.display = 'none'; // Ocultar el botón "Ver más"
+    
+    // Mostrar u ocultar secciones basadas en si hay tarjetas visibles
+    if (hasVisibleCard || departmentTitle.includes(searchTerm)) {
+      section.style.display = "block";
+    } else {
+      section.style.display = "none";
     }
-
-    function showMoreCards(departmentId) {
-        const hiddenCards = document.getElementById(departmentId);
-        const btn = document.querySelector(`button[onclick="showMoreCards('${departmentId}')"]`);
-        if (hiddenCards.style.display === 'none' || hiddenCards.style.display === '') {
-            hiddenCards.style.display = 'grid'; // Asegurar que se muestra como grid
-            btn.innerText = 'Ver menos...';
-        } else {
-            hiddenCards.style.display = 'none';
-            btn.innerText = 'Ver más...';
-        }
-    }
+  });
+});
